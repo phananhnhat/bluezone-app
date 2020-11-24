@@ -50,6 +50,7 @@ import {
 } from '../../../core/storage';
 import {reportScreenAnalytics} from '../../../core/analytics';
 import SCREEN from '../../nameScreen';
+import {clearScheduleDeclareDailyHealthToday} from '../../../core/notifyScheduler';
 
 // Styles
 import styles from './styles/index.css';
@@ -234,6 +235,9 @@ class DailyDeclaration extends React.PureComponent {
 
     setHealthMonitoring(data);
     setTimeHealthMonitoring(new Date().getTime());
+
+    // Xử lý phần thông báo khai báo hàng ngày. Ngày hôm nay sẽ ko thông báo nữa.
+    clearScheduleDeclareDailyHealthToday();
   }
 
   InsertEntryPersonReportError(error) {

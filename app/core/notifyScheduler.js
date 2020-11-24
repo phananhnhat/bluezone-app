@@ -25,15 +25,18 @@ import {DeviceEventEmitter, Platform} from 'react-native';
 import firebase from 'react-native-firebase';
 import RNSettings from 'react-native-settings';
 import SystemSetting from 'react-native-system-setting';
+import moment from 'moment';
 
 import configuration from '../configuration';
 import {cancelNotify, pushNotify, removeNotify} from './notify';
 import {createNotification, scheduleNotification} from './fcm';
 import {FCM_CHANNEL_ID, SMALL_ICON} from '../const/fcm';
-import {getLatestVersionApp} from './storage';
+import {getLatestVersionApp, getTimeHealthMonitoring} from './storage';
 import {CurrentVersionValue} from './version';
 import {getBluetoothState, registerBluetoothStateListener} from './bluetooth';
 import {PERMISSIONS, RESULTS, check} from 'react-native-permissions';
+
+const MILISECONDS_IN_DAY = 86400000;
 
 const bluetoothGranted = async () => {
   const v = check(PERMISSIONS.IOS.BLUETOOTH_PERIPHERAL);
@@ -45,13 +48,17 @@ const locationGranted = async () => {
   return v === RESULTS.GRANTED;
 };
 
-const createScheduleNotifications = (scheduleNotifications, language) => {
+const createScheduleNotifications = (
+  scheduleNotifications,
+  language,
+  startTime = new Date().getTime(),
+) => {
   const {itemRepeat = []} = scheduleNotifications || {};
   itemRepeat.length > 0 &&
     itemRepeat.forEach(item => {
       let iDate = new Date().setHours(0, 0, 0, 0) + item.dayStartTime;
-      if (iDate < new Date().getTime()) {
-        iDate += 86400000;
+      if (iDate < startTime) {
+        iDate += MILISECONDS_IN_DAY;
       }
       createSchedulingNotification(
         _createNotification(item.id, scheduleNotifications, language),
@@ -73,6 +80,7 @@ const scheduleScanNotificationsChange = (
   newScheduleNotifications,
   language,
   isCreate,
+  startTime = new Date().getTime(),
 ) => {
   const {itemRepeat: oldRepeat = []} = newScheduleNotifications || {};
   const {itemRepeat: newRepeat = []} = oldScheduleNotifications || {};
@@ -94,8 +102,8 @@ const scheduleScanNotificationsChange = (
       }
 
       let iDate = new Date().setHours(0, 0, 0, 0) + item.dayStartTime;
-      if (iDate < new Date().getTime()) {
-        iDate += 86400000;
+      if (iDate < startTime) {
+        iDate += MILISECONDS_IN_DAY;
       }
 
       // Create schedule
@@ -307,6 +315,71 @@ const scheduleAddInfoNotification_SetConfig = (oldConfig, newConfig) => {
   const {ScheduleAddInfoNotification: newSchedule} = newConfig;
   scheduleScanNotificationsChange(oldSchedule, newSchedule, Language, true);
 };
+
+const creatScheduleDeclareDailyHealth = startTime => {
+  const {ScheduleDeclareDailyHealth, Language} = configuration;
+  if (!ScheduleDeclareDailyHealth) {
+    return;
+  }
+  createScheduleNotifications(ScheduleDeclareDailyHealth, Language, startTime);
+};
+
+const clearScheduleDeclareDailyHealth = () => {
+  const {ScheduleDeclareDailyHealth} = configuration;
+  clearScheduleNotifications(ScheduleDeclareDailyHealth);
+};
+
+const clearScheduleDeclareDailyHealthToday = () => {
+  clearScheduleDeclareDailyHealth();
+  const iDate = new Date().setHours(0, 0, 0, 0) + MILISECONDS_IN_DAY;
+  creatScheduleDeclareDailyHealth(iDate);
+};
+
+const scheduleDeclareDailyHealth_ChangeLanguage = async () => {
+  const {ScheduleDeclareDailyHealth, AppMode} = configuration;
+  if (!ScheduleDeclareDailyHealth || AppMode !== 'entry') {
+    return;
+  }
+
+  const timeHealthMonitoring = await getTimeHealthMonitoring();
+  let iDate = new Date().setHours(0, 0, 0, 0);
+  if (
+    timeHealthMonitoring &&
+    moment(timeHealthMonitoring).format('DD/MM/YYYY') ===
+      moment().format('DD/MM/YYYY')
+  ) {
+    iDate += MILISECONDS_IN_DAY;
+  }
+  clearScheduleDeclareDailyHealth();
+  creatScheduleDeclareDailyHealth(iDate);
+};
+
+const scheduleDeclareDailyHealth_SetConfig = async (oldConfig, newConfig) => {
+  const {ScheduleDeclareDailyHealth, Language, AppMode} = configuration;
+  if (!ScheduleDeclareDailyHealth || AppMode !== 'entry') {
+    return;
+  }
+  const {ScheduleDeclareDailyHealth: oldSchedule} = oldConfig;
+  const {ScheduleDeclareDailyHealth: newSchedule} = newConfig;
+
+  const timeHealthMonitoring = await getTimeHealthMonitoring();
+  let iDate = new Date().setHours(0, 0, 0, 0);
+  if (
+    timeHealthMonitoring &&
+    moment(timeHealthMonitoring).format('DD/MM/YYYY') ===
+      moment().format('DD/MM/YYYY')
+  ) {
+    iDate += MILISECONDS_IN_DAY;
+  }
+
+  scheduleScanNotificationsChange(
+    oldSchedule,
+    newSchedule,
+    Language,
+    true,
+    iDate,
+  );
+};
 // -------------------------------------------------------------------------------------
 const _createNotification = (id, n, language) => {
   const isVI = language === 'vi';
@@ -472,7 +545,7 @@ const checkRegisterNotificationOfDay = () => {
 
   const date = new Date();
   const currentTimeOfHours = date.getHours();
-  const Time_ScheduleNotify = ScheduleNotifyDay * 86400000;
+  const Time_ScheduleNotify = ScheduleNotifyDay * MILISECONDS_IN_DAY;
   StatusNotifyRegister = parseInt(StatusNotifyRegister || new Date().getTime());
   const currentTimeOfDay = date.setHours(0, 0, 0, 0);
   const StatusNotifyRegisterForHour = new Date(StatusNotifyRegister).setHours(
@@ -527,6 +600,7 @@ const scheduleNotificationChangeLanguageListener = Language => {
   scheduleRegisterNotification_ChangeLanguage(Language);
   scheduleUpdateAppNotification_ChangeLanguage(Language);
   scheduleAddInfoNotification_ChangeLanguage(Language);
+  scheduleDeclareDailyHealth_ChangeLanguage(Language).then();
   if (Platform.OS === 'ios') {
     // scanNotification_ChangeLanguage(Language).then();
     scheduleScanNotification_ChangeLanguage(Language).then();
@@ -541,6 +615,7 @@ const scheduleNotificationSetConfigurationListener = oldConfig => {
   scheduleRegisterNotification_SetConfig(oldConfig, configuration);
   scheduleUpdateAppNotification_SetConfig(oldConfig, configuration);
   scheduleAddInfoNotification_SetConfig(oldConfig, configuration);
+  scheduleDeclareDailyHealth_SetConfig(oldConfig, configuration).then();
   if (Platform.OS === 'ios') {
     // scanNotification_SetConfiguration(oldConfig, configuration).then();
     scheduleScanNotification_SetConfiguration(oldConfig, configuration).then();
@@ -566,4 +641,7 @@ export {
   checkRegisterNotificationOfDay,
   scheduleNotificationChangeLanguageListener,
   scheduleNotificationSetConfigurationListener,
+  creatScheduleDeclareDailyHealth,
+  clearScheduleDeclareDailyHealth,
+  clearScheduleDeclareDailyHealthToday,
 };

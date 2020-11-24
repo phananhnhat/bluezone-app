@@ -45,6 +45,8 @@ import {getTokenFirebase} from './core/fcm';
 import {
   scheduleNotificationChangeLanguageListener,
   scheduleNotificationSetConfigurationListener,
+  creatScheduleDeclareDailyHealth,
+  clearScheduleDeclareDailyHealth,
 } from './core/notifyScheduler';
 import log from './core/log';
 import * as msg from './const/log';
@@ -325,9 +327,36 @@ const configuration = {
     title: 'Phiên bản mới.',
     titleEn: 'New version.',
     message: 'Đã có phiên bản mới. Bạn hãy truy cập ứng dụng để cập nhật.',
-    messageEn: 'New version is available. Please open Bluezone to get the update.',
+    messageEn:
+      'New version is available. Please open Bluezone to get the update.',
     bigText: 'Đã có phiên bản mới. Bạn hãy truy cập ứng dụng để cập nhật.',
-    bigTextEn: 'New version is available. Please open Bluezone to get the update.',
+    bigTextEn:
+      'New version is available. Please open Bluezone to get the update.',
+  },
+  ScheduleDeclareDailyHealth: {
+    itemRepeat: [
+      {
+        id: '138',
+        dayStartTime: 32400000,
+        repeatTime: 86400000,
+      },
+      {
+        id: '139',
+        dayStartTime: 54000000,
+        repeatTime: 86400000,
+      },
+      {
+        id: '140',
+        dayStartTime: 72000000,
+        repeatTime: 86400000,
+      },
+    ],
+    title: 'Khai báo sức khỏe hàng ngày.',
+    titleEn: 'Declare daily health.',
+    message: 'Bạn cần khai báo sức khỏe hàng ngày.',
+    messageEn: 'You need declaration daily health.',
+    bigText: 'Bạn cần khai báo sức khỏe hàng ngày.',
+    bigTextEn: 'You need declaration daily health.',
   },
   // AndroidScanNotification: {
   //   title: 'Bluezone đang không thể hoạt động chính xác !',
@@ -348,10 +377,27 @@ const configuration = {
   AndroidScanNotificationVersion2: {
     title: 'Bluezone đang không thể hoạt động chính xác !',
     titleEn: 'Bluezone not working properly !',
-    bigText: '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
-    bigTextEn: '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
+    bigText:
+      '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
+    bigTextEn:
+      '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
     buttonText: 'Kiểm tra ngay',
     buttonTextEn: 'Check now',
+  },
+  AndroidScheduleScanEntryNotification: {
+    itemRepeat: [
+      {
+        id: '108',
+        dayStartTime: 32400000,
+        repeatTime: 86400000,
+      },
+    ],
+    title: 'Bluezone đang không thể hoạt động chính xác !',
+    titleEn: 'Bluezone not working properly !',
+    bigText:
+      '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
+    bigTextEn:
+      '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
   },
   iOSLocationPermissonVersion2: {
     title: 'Bluezone đang không thể hoạt động chính xác !',
@@ -364,8 +410,10 @@ const configuration = {
   iOSScanNotificationVersion2: {
     title: 'Bluezone đang không thể hoạt động chính xác !',
     titleEn: 'Bluezone not working properly !',
-    bigText: '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
-    bigTextEn: '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
+    bigText:
+      '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
+    bigTextEn:
+      '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
     buttonText: 'Kiểm tra ngay',
     buttonTextEn: 'Check now',
   },
@@ -377,6 +425,21 @@ const configuration = {
   //   bigText: 'Bluetooth cần được bật để Bluezone có thể cảnh báo tới bạn.',
   //   bigTextEn: 'Bluetooth needs to be turned on for Bluezone to send you the alerts.',
   // },
+  iOSScheduleScanEntryNotification: {
+    itemRepeat: [
+      {
+        id: '108',
+        dayStartTime: 32400000,
+        repeatTime: 86400000,
+      },
+    ],
+    title: 'Bluezone đang không thể hoạt động chính xác !',
+    titleEn: 'Bluezone not working properly !',
+    bigText:
+      '<b>Bluetooth</b><!bl>Vị trí</!bl><bl> và vị trí</bl> cần được bật để Bluezone có thể cảnh báo tới bạn.',
+    bigTextEn:
+      '<b>Bluetooth</b><!bl>Location</!bl><bl> and location</bl> need to be turned on for Bluezone to send alerts to you.',
+  },
   AndroidEnableBluetoothNotification: {
     title: 'Bluezone đang không thể hoạt động chính xác.',
     titleEn: 'Bluezone not working properly.',
@@ -507,9 +570,15 @@ const setEntryLanguage = EntryLanguage => {
 
 /**
  * Luu che do cua app
- * @param Language
+ * @param mode
  */
 const setAppMode = mode => {
+  if (mode === 'entry') {
+    // Tạo thông báo yêu cầu khai báo y tế hàng ngày
+    creatScheduleDeclareDailyHealth();
+  } else {
+    clearScheduleDeclareDailyHealth();
+  }
   Object.assign(configuration, {AppMode: mode});
   setAppModeStorage(mode);
   Service.setMode(mode);

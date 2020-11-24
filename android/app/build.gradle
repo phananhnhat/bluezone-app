@@ -144,7 +144,7 @@ android {
              versionNameSuffix ""
              resValue "string", "app_name", "Bluezone"
              versionCode 1
-             versionName "3.0.7.1-deploygate.dev"
+             versionName "3.0.7.2-deploygate.dev"
         }
     }
 
