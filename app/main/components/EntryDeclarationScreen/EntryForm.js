@@ -2366,26 +2366,26 @@ class EntryForm extends React.Component {
 
                   <View style={{marginLeft: 20}}>
                     <TouchableOpacity
-                      style={styles.rowSymptom1}
+                      style={styles.testResultRow}
                       activeOpacity={1}
                       onPress={() => this.selectTestResult(true)}>
                       <RadioButton
                         checked={testResult === true}
                         onPress={() => this.selectTestResult(true)}
                       />
-                      <MediumText>
+                      <MediumText style={styles.testResultName}>
                         {formatMessage(messages.negative)}
                       </MediumText>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.rowSymptom1}
+                      style={styles.testResultRow}
                       activeOpacity={1}
                       onPress={() => this.selectTestResult(false)}>
                       <RadioButton
                         checked={testResult === false}
                         onPress={() => this.selectTestResult(false)}
                       />
-                      <MediumText>
+                      <MediumText style={styles.testResultName}>
                         {formatMessage(messages.positive)}
                       </MediumText>
                     </TouchableOpacity>

@@ -449,8 +449,11 @@ const deleteHistoryFile = filePath => {
     .then(() => {
       log.info(msg.DELETE_FILE_SUCCESS, filePath);
     })
-    .catch(() => {
-      log.info(msg.DELETE_FILE_FAILURE, filePath);
+    .catch(e => {
+      log.info(msg.DELETE_FILE_FAILURE, {
+        path: filePath,
+        e: JSON.stringify(e),
+      });
     });
 };
 
@@ -1483,9 +1486,8 @@ const uploadServiceLog = (
   success = _defaultFunc(),
   failure = _defaultFunc,
   optionMore = {},
-  numberRetry,
+  numberRetry = 0,
 ) => {
-  debugger;
   const _progress =
     typeof optionMore.progress === 'function'
       ? optionMore.progress

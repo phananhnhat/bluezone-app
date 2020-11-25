@@ -185,6 +185,17 @@ const styles = StyleSheet.create({
 
   testResultImageBtn: {},
 
+  testResultRow: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+
+  testResultName: {
+    fontSize: fontSize.smaller,
+    color: '#000',
+  },
+
   selectImage: {
     fontSize: fontSize.small,
     color: '#000',
