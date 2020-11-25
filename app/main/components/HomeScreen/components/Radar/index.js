@@ -410,6 +410,18 @@ class Index extends PureComponent {
     //   }
     // }
 
+    // this.dotRefArr['weak'][32].play();
+    // this.dotRefArr['weak'][31].play();
+    // this.dotRefArr['weak'][30].play();
+    // this.dotRefArr['weak'][29].play();
+    // this.dotRefArr['weak'][28].play();
+    //
+    // this.dotRefArr['weak'][5].play();
+    // this.dotRefArr['weak'][6].play();
+    // this.dotRefArr['weak'][7].play();
+    // this.dotRefArr['weak'][8].play();
+    // this.dotRefArr['weak'][9].play();
+
     // Play radar
     this.radarRef.play();
     this.objectRadar.timeStart = new Date().getTime();
@@ -445,7 +457,6 @@ class Index extends PureComponent {
 
   render() {
     const {Language} = configuration;
-    const {levelRadar} = this.state;
 
     return (
       <TouchableOpacity
